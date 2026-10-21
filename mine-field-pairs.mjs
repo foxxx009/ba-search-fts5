@@ -68,8 +68,11 @@ for (const p of pairs.sort((a, b) => b.query.length - a.query.length)) {
 fs.mkdirSync('runs', { recursive: true });
 fs.writeFileSync('runs/field-pairs.json', JSON.stringify(uniq, null, 1));
 console.log(`\nmined ${pairs.length} candidate field-discriminating pairs, kept ${uniq.length}`);
-for (const p of uniq.slice(0, 12)) {
-  console.log(`\n  q="${p.query}"`);
+// Print every kept pair. An earlier build printed only the first 12 while the summary line said
+// "kept 20", so the transcript and the count disagreed; the file below is the full set either way.
+console.log(`printing all ${uniq.length} kept pairs (same set as runs/field-pairs.json)`);
+for (const [i, p] of uniq.entries()) {
+  console.log(`\n  [${i + 1}/${uniq.length}] q="${p.query}"`);
   console.log(`    target      : ${p.target_title.slice(0, 70)}`);
   console.log(`    distractor  : ${p.distractor_title.slice(0, 70)}`);
 }
