@@ -41,8 +41,20 @@ console.log(`  flat weights      field_pair_top1 = ${flatBefore}`);
 console.log(`  tuned weights     field_pair_top1 = ${bestBefore}`);
 
 // 2) delete the database entirely and rebuild from the shipped corpus
+// On Windows a -wal/-shm pair left by an earlier open() handle can keep the file locked for a
+// moment after close(); retry briefly rather than failing the whole check on a transient lock.
+const rmRetry = (p) => {
+  for (let i = 0; i < 20; i++) {
+    if (!fs.existsSync(p)) return true;
+    try { fs.rmSync(p); } catch { /* still locked */ }
+    if (!fs.existsSync(p)) return true;
+    execFileSync(process.execPath, ['-e', 'setTimeout(()=>{},120)']);
+  }
+  return !fs.existsSync(p);
+};
 for (const suffix of ['', '-wal', '-shm']) {
-  if (fs.existsSync(DB + suffix)) fs.rmSync(DB + suffix);
+  const p = DB + suffix;
+  if (!rmRetry(p)) throw new Error(`could not remove ${p} after 20 attempts`);
 }
 console.log('\n[clean rebuild from scratch]');
 const built = JSON.parse(execFileSync(NODE, ['src/indexer.mjs'], { encoding: 'utf8' }));
